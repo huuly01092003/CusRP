@@ -154,9 +154,8 @@ class KhachHangModel {
         return null;
     }
 
-    // ✅ FIXED: Sửa lại logic lọc GKHL
-    public function getDataByMonthYear($thangNam, $filters = []) {
-        // Xây dựng query cơ bản với subquery để xác định has_gkhl
+     public function getDataByMonthYear($thangNam, $filters = []) {
+        // Xây dựng query cơ bản
         $sql = "SELECT 
                     kh.ma_khach_hang, 
                     kh.ten_khach_hang, 
@@ -188,7 +187,7 @@ class KhachHangModel {
         $sql .= " GROUP BY kh.ma_khach_hang, kh.ten_khach_hang, kh.dia_chi_khach_hang, 
                   kh.ma_tinh_tp, kh.phan_loai_khach_hang, kh.kenh";
         
-        // ✅ FIXED: Lọc GKHL sau khi GROUP BY bằng HAVING
+        // ✅ FIXED: Lọc GKHL sau khi GROUP BY bằng HAVING (lần này fix đúng)
         if (isset($filters['gkhl_status']) && $filters['gkhl_status'] !== '') {
             if ($filters['gkhl_status'] === '1') {
                 // Chỉ lấy khách hàng đã tham gia GKHL
@@ -199,12 +198,13 @@ class KhachHangModel {
             }
         }
         
-        $sql .= " ORDER BY total_doanh_so DESC";
+        $sql .= " ORDER BY total_doanh_so DESC LIMIT 100000";
         
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
+
 
     public function getCustomerDetail($maKhachHang, $thangNam) {
         $sql = "SELECT * FROM {$this->table} 

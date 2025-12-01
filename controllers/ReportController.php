@@ -12,7 +12,8 @@ class ReportController {
         $thangNam = $_GET['thang_nam'] ?? '';
         $filters = [
             'ma_tinh_tp' => $_GET['ma_tinh_tp'] ?? '',
-            'ma_khach_hang' => $_GET['ma_khach_hang'] ?? ''
+            'ma_khach_hang' => $_GET['ma_khach_hang'] ?? '',
+            'gkhl_status' => $_GET['gkhl_status'] ?? ''  // ✅ THÊM gkhl_status
         ];
 
         $data = [];
@@ -36,9 +37,9 @@ class ReportController {
         }
 
         $data = $this->model->getCustomerDetail($maKhachHang, $thangNam);
-
         $location = $this->model->getCustomerLocation($maKhachHang);
         $gkhlInfo = $this->model->getGkhlInfo($maKhachHang);
+        
         require_once 'views/detail.php';
     }
 }

@@ -167,171 +167,172 @@
         </div>
     </nav>
 
-    <div class="container-fluid mt-4">
-        <div class="filter-card">
-            <h5 class="mb-4"><i class="fas fa-filter me-2"></i>Bộ lọc dữ liệu</h5>
-            <form method="GET" action="report.php">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">Tháng/Năm</label>
-                        <select name="thang_nam" class="form-select" required>
-                            <option value="">-- Chọn tháng/năm --</option>
-                            <?php foreach ($monthYears as $my): ?>
-                                <option value="<?= $my ?>" <?= ($thangNam === $my) ? 'selected' : '' ?>>
-                                    <?= $my ?>
-                                </option>
-                            <?php endforeach; ?>
+<!-- ✅ FIXED: Cập nhật phần form filter - lấy giá trị từ query string -->
+<div class="container-fluid mt-4">
+    <div class="filter-card">
+        <h5 class="mb-4"><i class="fas fa-filter me-2"></i>Bộ lọc dữ liệu</h5>
+        <form method="GET" action="report.php">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">Tháng/Năm</label>
+                    <select name="thang_nam" class="form-select" required>
+                        <option value="">-- Chọn tháng/năm --</option>
+                        <?php foreach ($monthYears as $my): ?>
+                            <option value="<?= $my ?>" <?= ($thangNam === $my) ? 'selected' : '' ?>>
+                                <?= $my ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Tỉnh/Thành phố</label>
+                    <select name="ma_tinh_tp" class="form-select">
+                        <option value="">-- Tất cả --</option>
+                        <?php foreach ($provinces as $province): ?>
+                            <option value="<?= $province ?>" <?= ($filters['ma_tinh_tp'] === $province) ? 'selected' : '' ?>>
+                                <?= $province ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold">Mã khách hàng</label>
+                    <input type="text" name="ma_khach_hang" class="form-control" 
+                           placeholder="Nhập mã KH..." value="<?= htmlspecialchars($filters['ma_khach_hang']) ?>">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">
+                        <i class="fas fa-handshake me-1"></i>Trạng thái GKHL
+                    </label>
+                    <div class="gkhl-filter-wrapper">
+                        <i class="fas fa-filter filter-icon"></i>
+                        <select name="gkhl_status" class="form-select">
+                            <option value="" <?= ($filters['gkhl_status'] === '') ? 'selected' : '' ?>>-- Tất cả --</option>
+                            <option value="1" <?= ($filters['gkhl_status'] === '1') ? 'selected' : '' ?>>
+                                ✅ Đã tham gia GKHL
+                            </option>
+                            <option value="0" <?= ($filters['gkhl_status'] === '0') ? 'selected' : '' ?>>
+                                ❌ Chưa tham gia GKHL
+                            </option>
                         </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold">Tỉnh/Thành phố</label>
-                        <select name="ma_tinh_tp" class="form-select">
-                            <option value="">-- Tất cả --</option>
-                            <?php foreach ($provinces as $province): ?>
-                                <option value="<?= $province ?>" <?= ($filters['ma_tinh_tp'] === $province) ? 'selected' : '' ?>>
-                                    <?= $province ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label class="form-label fw-bold">Mã khách hàng</label>
-                        <input type="text" name="ma_khach_hang" class="form-control" 
-                               placeholder="Nhập mã KH..." value="<?= htmlspecialchars($filters['ma_khach_hang']) ?>">
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label fw-bold">
-                            <i class="fas fa-handshake me-1"></i>Trạng thái GKHL
-                        </label>
-                        <div class="gkhl-filter-wrapper">
-                            <i class="fas fa-filter filter-icon"></i>
-                            <select name="gkhl_status" class="form-select">
-                                <option value="">-- Tất cả --</option>
-                                <option value="1" <?= (isset($_GET['gkhl_status']) && $_GET['gkhl_status'] === '1') ? 'selected' : '' ?>>
-                                    ✅ Đã tham gia GKHL
-                                </option>
-                                <option value="0" <?= (isset($_GET['gkhl_status']) && $_GET['gkhl_status'] === '0') ? 'selected' : '' ?>>
-                                    ❌ Chưa tham gia GKHL
-                                </option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-search me-2"></i>Tìm kiếm
-                        </button>
                     </div>
                 </div>
-            </form>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Tìm kiếm
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <?php if (!empty($data)): ?>
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h2><?= number_format(count($data)) ?></h2>
+                    <p class="mb-0">Tổng số khách hàng</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h2><?= number_format(array_sum(array_column($data, 'total_doanh_so')), 0) ?></h2>
+                    <p class="mb-0">Tổng doanh số</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h2><?= number_format(array_sum(array_column($data, 'total_san_luong')), 0) ?></h2>
+                    <p class="mb-0">Tổng sản lượng</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-box">
+                    <h2><?= number_format(count(array_filter($data, fn($row) => !empty($row['has_gkhl'])))) ?></h2>
+                    <p class="mb-0"><i class="fas fa-handshake me-2"></i>KH có GKHL</p>
+                </div>
+            </div>
         </div>
 
-        <?php if (!empty($data)): ?>
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="stat-box">
-                        <h2><?= number_format(count($data)) ?></h2>
-                        <p class="mb-0">Tổng số khách hàng</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-box">
-                        <h2><?= number_format(array_sum(array_column($data, 'total_doanh_so')), 0) ?></h2>
-                        <p class="mb-0">Tổng doanh số</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-box">
-                        <h2><?= number_format(array_sum(array_column($data, 'total_san_luong')), 0) ?></h2>
-                        <p class="mb-0">Tổng sản lượng</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-box">
-                        <h2><?= number_format(count(array_filter($data, fn($row) => !empty($row['has_gkhl'])))) ?></h2>
-                        <p class="mb-0"><i class="fas fa-handshake me-2"></i>KH có GKHL</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="data-card">
-                <div class="card-body">
-                    <h5 class="card-title mb-4">
-                        <i class="fas fa-users me-2"></i>Danh sách khách hàng
-                        <?php if (isset($_GET['gkhl_status'])): ?>
-                            <?php if ($_GET['gkhl_status'] === '1'): ?>
-                                <span class="badge badge-gkhl ms-2">
-                                    <i class="fas fa-check-circle"></i> Lọc: Đã tham gia GKHL
-                                </span>
-                            <?php elseif ($_GET['gkhl_status'] === '0'): ?>
-                                <span class="badge badge-no-gkhl ms-2">
-                                    <i class="fas fa-times-circle"></i> Lọc: Chưa tham gia GKHL
-                                </span>
-                            <?php endif; ?>
+        <div class="data-card">
+            <div class="card-body">
+                <h5 class="card-title mb-4">
+                    <i class="fas fa-users me-2"></i>Danh sách khách hàng
+                    <?php if (!empty($filters['gkhl_status'])): ?>
+                        <?php if ($filters['gkhl_status'] === '1'): ?>
+                            <span class="badge badge-gkhl ms-2">
+                                <i class="fas fa-check-circle"></i> Lọc: Đã tham gia GKHL
+                            </span>
+                        <?php elseif ($filters['gkhl_status'] === '0'): ?>
+                            <span class="badge badge-no-gkhl ms-2">
+                                <i class="fas fa-times-circle"></i> Lọc: Chưa tham gia GKHL
+                            </span>
                         <?php endif; ?>
-                    </h5>
-                    <div class="table-responsive">
-                        <table id="customerTable" class="table table-hover table-sm">
-                            <thead>
-                                <tr>
-                                    <th>STT</th>
-                                    <th>Mã KH</th>
-                                    <th>Tên khách hàng</th>
-                                    <th>Địa chỉ</th>
-                                    <th>Tỉnh/TP</th>
-                                    <th>Doanh số</th>
-                                    <th>Sản lượng</th>
-                                    <th><i class="fas fa-handshake me-1"></i>GKHL</th>
-                                    <th>Thao tác</th>
+                    <?php endif; ?>
+                </h5>
+                <div class="table-responsive">
+                    <table id="customerTable" class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>STT</th>
+                                <th>Mã KH</th>
+                                <th>Tên khách hàng</th>
+                                <th>Địa chỉ</th>
+                                <th>Tỉnh/TP</th>
+                                <th>Doanh số</th>
+                                <th>Sản lượng</th>
+                                <th><i class="fas fa-handshake me-1"></i>GKHL</th>
+                                <th>Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($data as $index => $row): ?>
+                                <tr <?php if (!empty($row['has_gkhl'])): ?>style="background-color: rgba(40, 167, 69, 0.05);"<?php endif; ?>>
+                                    <td><?= $index + 1 ?></td>
+                                    <td><strong><?= htmlspecialchars($row['ma_khach_hang']) ?></strong></td>
+                                    <td title="<?= htmlspecialchars($row['ten_khach_hang']) ?>">
+                                        <?= htmlspecialchars($row['ten_khach_hang']) ?>
+                                    </td>
+                                    <td title="<?= htmlspecialchars($row['dia_chi_khach_hang']) ?>">
+                                        <?= htmlspecialchars($row['dia_chi_khach_hang']) ?>
+                                    </td>
+                                    <td><?= htmlspecialchars($row['ma_tinh_tp']) ?></td>
+                                    <td><strong><?= number_format($row['total_doanh_so'], 0) ?></strong></td>
+                                    <td><?= number_format($row['total_san_luong'], 0) ?></td>
+                                    <td>
+                                        <?php if (!empty($row['has_gkhl'])): ?>
+                                            <span class="badge badge-gkhl">
+                                                <i class="fas fa-check-circle"></i> GKHL
+                                            </span>
+                                        <?php else: ?>
+                                            <span class="badge badge-no-gkhl">
+                                                <i class="fas fa-times-circle"></i> Chưa có
+                                            </span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+                                        <a href="report.php?action=detail&ma_khach_hang=<?= urlencode($row['ma_khach_hang']) ?>&thang_nam=<?= urlencode($thangNam) ?>" 
+                                           class="btn btn-detail btn-sm">
+                                            <i class="fas fa-eye me-1"></i>Chi tiết
+                                        </a>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($data as $index => $row): ?>
-                                    <tr>
-                                        <td><?= $index + 1 ?></td>
-                                        <td><strong><?= htmlspecialchars($row['ma_khach_hang']) ?></strong></td>
-                                        <td title="<?= htmlspecialchars($row['ten_khach_hang']) ?>">
-                                            <?= htmlspecialchars($row['ten_khach_hang']) ?>
-                                        </td>
-                                        <td title="<?= htmlspecialchars($row['dia_chi_khach_hang']) ?>">
-                                            <?= htmlspecialchars($row['dia_chi_khach_hang']) ?>
-                                        </td>
-                                        <td><?= htmlspecialchars($row['ma_tinh_tp']) ?></td>
-                                        <td><strong><?= number_format($row['total_doanh_so'], 0) ?></strong></td>
-                                        <td><?= number_format($row['total_san_luong'], 0) ?></td>
-                                        <td>
-                                            <?php if (!empty($row['has_gkhl'])): ?>
-                                                <span class="badge badge-gkhl">
-                                                    <i class="fas fa-check-circle"></i> GKHL
-                                                </span>
-                                            <?php else: ?>
-                                                <span class="badge badge-no-gkhl">
-                                                    <i class="fas fa-times-circle"></i> Chưa có
-                                                </span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <a href="report.php?action=detail&ma_khach_hang=<?= urlencode($row['ma_khach_hang']) ?>&thang_nam=<?= urlencode($thangNam) ?>" 
-                                               class="btn btn-detail btn-sm">
-                                                <i class="fas fa-eye me-1"></i>Chi tiết
-                                            </a>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        <?php elseif (!empty($thangNam)): ?>
-            <div class="alert alert-warning">
-                <i class="fas fa-info-circle me-2"></i>Không tìm thấy dữ liệu phù hợp với bộ lọc.
-            </div>
-        <?php else: ?>
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>Vui lòng chọn tháng/năm để xem báo cáo.
-            </div>
-        <?php endif; ?>
-    </div>
+        </div>
+    <?php elseif (!empty($thangNam)): ?>
+        <div class="alert alert-warning">
+            <i class="fas fa-info-circle me-2"></i>Không tìm thấy dữ liệu phù hợp với bộ lọc.
+        </div>
+    <?php else: ?>
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>Vui lòng chọn tháng/năm để xem báo cáo.
+        </div>
+    <?php endif; ?>
+</div>
 
     <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -353,6 +354,30 @@
                 scrollX: false
             });
         });
+
+    //THÊM: Tối ưu DataTables - Chỉ khởi tạo nếu có dữ liệu
+        $(document).ready(function() {
+        // Chỉ khởi tạo DataTable nếu bảng có dữ liệu
+        if ($('#customerTable tbody tr').length > 0) {
+            $('#customerTable').DataTable({
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
+                },
+                pageLength: 25,
+                order: [[5, 'desc']],
+                columnDefs: [
+                    { orderable: false, targets: 8 },
+                    { className: "text-center", targets: [0, 7, 8] }
+                ],
+                autoWidth: false,
+                scrollX: false,
+                deferRender: true,      // ✅ Lazy render
+                processing: true,        // ✅ Hiển thị loading
+                bFilter: true,          // ✅ Giữ search
+                bLengthChange: true     // ✅ Giữ page size
+            });
+        }
+    });
     </script>
 </body>
 </html>
