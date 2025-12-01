@@ -4,6 +4,7 @@ require_once 'config/database.php';
 class DskhModel {
     private $conn;
     private $table = "dskh";
+    private const PAGE_SIZE = 50; // Số bản ghi/trang
 
     public function __construct() {
         $database = new Database();
@@ -80,7 +81,12 @@ class DskhModel {
         }
     }
 
-    public function getAll($filters = []) {
+    // ✅ CẬP NHẬT: Thêm phân trang + LIMIT
+    public function getAll($filters = [], $page = 1) {
+        // Kiểm tra page hợp lệ
+        $page = max(1, (int)$page);
+        $offset = ($page - 1) * self::PAGE_SIZE;
+        
         $sql = "SELECT * FROM {$this->table} WHERE 1=1";
         $params = [];
         
@@ -104,13 +110,57 @@ class DskhModel {
             $params[':loai_kh'] = $filters['loai_kh'];
         }
         
-        $sql .= " ORDER BY ma_kh";
+        $sql .= " ORDER BY ma_kh LIMIT :limit OFFSET :offset";
+        $params[':limit'] = self::PAGE_SIZE;
+        $params[':offset'] = $offset;
         
         $stmt = $this->conn->prepare($sql);
-        $stmt->execute($params);
+        
+        // Bind kiểu dữ liệu cho LIMIT/OFFSET
+        foreach ($params as $key => $value) {
+            if ($key === ':limit' || $key === ':offset') {
+                $stmt->bindValue($key, $value, PDO::PARAM_INT);
+            } else {
+                $stmt->bindValue($key, $value);
+            }
+        }
+        
+        $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
+    // ✅ MỚI: Lấy tổng số bản ghi theo filter
+    public function getFilteredCount($filters = []) {
+        $sql = "SELECT COUNT(*) as total FROM {$this->table} WHERE 1=1";
+        $params = [];
+        
+        if (!empty($filters['tinh'])) {
+            $sql .= " AND tinh = :tinh";
+            $params[':tinh'] = $filters['tinh'];
+        }
+        
+        if (!empty($filters['quan_huyen'])) {
+            $sql .= " AND quan_huyen = :quan_huyen";
+            $params[':quan_huyen'] = $filters['quan_huyen'];
+        }
+        
+        if (!empty($filters['ma_kh'])) {
+            $sql .= " AND ma_kh LIKE :ma_kh";
+            $params[':ma_kh'] = '%' . $filters['ma_kh'] . '%';
+        }
+        
+        if (!empty($filters['loai_kh'])) {
+            $sql .= " AND loai_kh = :loai_kh";
+            $params[':loai_kh'] = $filters['loai_kh'];
+        }
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'] ?? 0;
+    }
+
+    // ✅ KHÔNG THAY ĐỔI
     public function getProvinces() {
         $sql = "SELECT DISTINCT tinh FROM {$this->table} WHERE tinh IS NOT NULL ORDER BY tinh";
         $stmt = $this->conn->prepare($sql);
@@ -148,3 +198,4 @@ class DskhModel {
         return $stmt->fetchColumn();
     }
 }
+?>

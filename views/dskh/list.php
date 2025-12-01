@@ -5,7 +5,6 @@
     <title>Danh sách Khách hàng</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
     <style>
         body { background: #f5f7fa; }
         .navbar-custom {
@@ -29,6 +28,12 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+        .pagination-info {
+            text-align: center;
+            margin: 15px 0;
+            color: #666;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -46,6 +51,7 @@
             <h5><i class="fas fa-filter me-2"></i>Bộ lọc</h5>
             <form method="GET" action="dskh.php">
                 <input type="hidden" name="action" value="list">
+                <input type="hidden" name="page" value="1">
                 <div class="row g-3 mt-2">
                     <div class="col-md-3">
                         <select name="tinh" class="form-select">
@@ -81,13 +87,31 @@
             </form>
         </div>
 
-        <div class="stat-box mb-4">
-            <h2><?= number_format($totalCount) ?></h2>
-            <p class="mb-0">Tổng số khách hàng</p>
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="stat-box">
+                    <h3><?= number_format($totalCount) ?></h3>
+                    <p class="mb-0">Khách hàng (theo bộ lọc)</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stat-box">
+                    <h3><?= number_format($totalCountAll) ?></h3>
+                    <p class="mb-0">Tổng số khách hàng</p>
+                </div>
+            </div>
         </div>
 
+        <!-- ✅ HIỂN THỊ THÔNG TIN PHÂN TRANG -->
+        <?php if ($totalCount > 0): ?>
+            <div class="pagination-info">
+                📄 Trang <strong><?= $page ?></strong> / <strong><?= $totalPages ?></strong> 
+                | Hiển thị <strong><?= count($data) ?></strong> / <strong><?= $totalCount ?></strong> bản ghi
+            </div>
+        <?php endif; ?>
+
         <div class="data-card">
-            <table id="dskhTable" class="table table-hover table-sm">
+            <table class="table table-hover table-sm">
                 <thead>
                     <tr>
                         <th>STT</th>
@@ -101,32 +125,95 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($data as $i => $row): ?>
+                    <?php if (empty($data)): ?>
                         <tr>
-                            <td><?= $i + 1 ?></td>
-                            <td><strong><?= $row['ma_kh'] ?></strong></td>
-                            <td><?= $row['ten_kh'] ?></td>
-                            <td><span class="badge bg-info"><?= $row['loai_kh'] ?></span></td>
-                            <td><?= $row['dia_chi'] ?></td>
-                            <td><?= $row['quan_huyen'] ?></td>
-                            <td><?= $row['tinh'] ?></td>
-                            <td><?= $row['ten_nvbh'] ?></td>
+                            <td colspan="8" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3 d-block"></i>
+                                Không tìm thấy dữ liệu
+                            </td>
                         </tr>
-                    <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php 
+                        $startNum = ($page - 1) * 50 + 1;
+                        foreach ($data as $i => $row): 
+                        ?>
+                            <tr>
+                                <td><?= $startNum + $i ?></td>
+                                <td><strong><?= htmlspecialchars($row['ma_kh']) ?></strong></td>
+                                <td><?= htmlspecialchars($row['ten_kh']) ?></td>
+                                <td><span class="badge bg-info"><?= htmlspecialchars($row['loai_kh']) ?></span></td>
+                                <td><?= htmlspecialchars($row['dia_chi']) ?></td>
+                                <td><?= htmlspecialchars($row['quan_huyen']) ?></td>
+                                <td><?= htmlspecialchars($row['tinh']) ?></td>
+                                <td><?= htmlspecialchars($row['ten_nvbh']) ?></td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </tbody>
             </table>
         </div>
+
+        <!-- ✅ PAGINATION UI -->
+        <?php if ($totalPages > 1): ?>
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <!-- Nút Đầu -->
+                    <?php if ($page > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?action=list&page=1&tinh=<?= urlencode($filters['tinh']) ?>&quan_huyen=<?= urlencode($filters['quan_huyen']) ?>&ma_kh=<?= urlencode($filters['ma_kh']) ?>&loai_kh=<?= urlencode($filters['loai_kh']) ?>">
+                                <i class="fas fa-step-backward"></i> Đầu
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?action=list&page=<?= $page - 1 ?>&tinh=<?= urlencode($filters['tinh']) ?>&quan_huyen=<?= urlencode($filters['quan_huyen']) ?>&ma_kh=<?= urlencode($filters['ma_kh']) ?>&loai_kh=<?= urlencode($filters['loai_kh']) ?>">
+                                <i class="fas fa-chevron-left"></i> Trước
+                            </a>
+                        </li>
+                    <?php endif; ?>
+
+                    <!-- Các trang -->
+                    <?php 
+                    $start = max(1, $page - 2);
+                    $end = min($totalPages, $page + 2);
+                    
+                    if ($start > 1): ?>
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    <?php endif; ?>
+
+                    <?php for ($i = $start; $i <= $end; $i++): ?>
+                        <li class="page-item <?= $i === $page ? 'active' : '' ?>">
+                            <a class="page-link" href="?action=list&page=<?= $i ?>&tinh=<?= urlencode($filters['tinh']) ?>&quan_huyen=<?= urlencode($filters['quan_huyen']) ?>&ma_kh=<?= urlencode($filters['ma_kh']) ?>&loai_kh=<?= urlencode($filters['loai_kh']) ?>">
+                                <?= $i ?>
+                            </a>
+                        </li>
+                    <?php endfor; ?>
+
+                    <?php if ($end < $totalPages): ?>
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    <?php endif; ?>
+
+                    <!-- Nút Cuối -->
+                    <?php if ($page < $totalPages): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?action=list&page=<?= $page + 1 ?>&tinh=<?= urlencode($filters['tinh']) ?>&quan_huyen=<?= urlencode($filters['quan_huyen']) ?>&ma_kh=<?= urlencode($filters['ma_kh']) ?>&loai_kh=<?= urlencode($filters['loai_kh']) ?>">
+                                Tiếp <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?action=list&page=<?= $totalPages ?>&tinh=<?= urlencode($filters['tinh']) ?>&quan_huyen=<?= urlencode($filters['quan_huyen']) ?>&ma_kh=<?= urlencode($filters['ma_kh']) ?>&loai_kh=<?= urlencode($filters['loai_kh']) ?>">
+                                Cuối <i class="fas fa-step-forward"></i>
+                            </a>
+                        </li>
+                    <?php endif; ?>
+                </ul>
+            </nav>
+        <?php endif; ?>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-    <script>
-        $('#dskhTable').DataTable({
-            language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json' },
-            pageLength: 50
-        });
-    </script>
 </body>
 </html>
