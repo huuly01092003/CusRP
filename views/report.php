@@ -49,6 +49,7 @@
             padding: 10px 8px;
             font-size: 0.875rem;
         }
+        
         /* Độ rộng cụ thể cho từng cột */
         #customerTable th:nth-child(1),
         #customerTable td:nth-child(1) {
@@ -57,41 +58,47 @@
         }
         #customerTable th:nth-child(2),
         #customerTable td:nth-child(2) {
-            width: 140px;
+            width: 120px;
         }
         #customerTable th:nth-child(3),
         #customerTable td:nth-child(3) {
-            width: 280px;
-            max-width: 280px;
+            width: 250px;
+            max-width: 250px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         #customerTable th:nth-child(4),
         #customerTable td:nth-child(4) {
-            width: 350px;
-            max-width: 350px;
+            width: 300px;
+            max-width: 300px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         #customerTable th:nth-child(5),
         #customerTable td:nth-child(5) {
-            width: 140px;
+            width: 100px;
         }
         #customerTable th:nth-child(6),
         #customerTable td:nth-child(6) {
-            width: 140px;
+            width: 120px;
             text-align: right;
         }
         #customerTable th:nth-child(7),
         #customerTable td:nth-child(7) {
-            width: 110px;
+            width: 100px;
             text-align: right;
         }
         #customerTable th:nth-child(8),
         #customerTable td:nth-child(8) {
+            width: 110px;
+            text-align: center;
+        }
+        #customerTable th:nth-child(9),
+        #customerTable td:nth-child(9) {
             width: 100px;
             text-align: center;
         }
+        
         .btn-detail {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -105,6 +112,46 @@
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
             color: white;
+        }
+        
+        /* Badge GKHL */
+        .badge-gkhl {
+            background: #28a745;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .badge-no-gkhl {
+            background: #dc3545;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Style cho select GKHL filter */
+        .gkhl-filter-wrapper {
+            position: relative;
+        }
+        .gkhl-filter-wrapper .form-select {
+            padding-right: 35px;
+        }
+        .gkhl-filter-wrapper .filter-icon {
+            position: absolute;
+            right: 35px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #667eea;
+            pointer-events: none;
         }
     </style>
 </head>
@@ -125,7 +172,7 @@
             <h5 class="mb-4"><i class="fas fa-filter me-2"></i>Bộ lọc dữ liệu</h5>
             <form method="GET" action="report.php">
                 <div class="row g-3">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <label class="form-label fw-bold">Tháng/Năm</label>
                         <select name="thang_nam" class="form-select" required>
                             <option value="">-- Chọn tháng/năm --</option>
@@ -136,7 +183,7 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold">Tỉnh/Thành phố</label>
                         <select name="ma_tinh_tp" class="form-select">
                             <option value="">-- Tất cả --</option>
@@ -147,10 +194,27 @@
                             <?php endforeach; ?>
                         </select>
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <label class="form-label fw-bold">Mã khách hàng</label>
                         <input type="text" name="ma_khach_hang" class="form-control" 
                                placeholder="Nhập mã KH..." value="<?= htmlspecialchars($filters['ma_khach_hang']) ?>">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-handshake me-1"></i>Trạng thái GKHL
+                        </label>
+                        <div class="gkhl-filter-wrapper">
+                            <i class="fas fa-filter filter-icon"></i>
+                            <select name="gkhl_status" class="form-select">
+                                <option value="">-- Tất cả --</option>
+                                <option value="1" <?= (isset($_GET['gkhl_status']) && $_GET['gkhl_status'] === '1') ? 'selected' : '' ?>>
+                                    ✅ Đã tham gia GKHL
+                                </option>
+                                <option value="0" <?= (isset($_GET['gkhl_status']) && $_GET['gkhl_status'] === '0') ? 'selected' : '' ?>>
+                                    ❌ Chưa tham gia GKHL
+                                </option>
+                            </select>
+                        </div>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-primary w-100">
@@ -163,22 +227,28 @@
 
         <?php if (!empty($data)): ?>
             <div class="row mb-4">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-box">
                         <h2><?= number_format(count($data)) ?></h2>
                         <p class="mb-0">Tổng số khách hàng</p>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-box">
                         <h2><?= number_format(array_sum(array_column($data, 'total_doanh_so')), 0) ?></h2>
                         <p class="mb-0">Tổng doanh số</p>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="stat-box">
                         <h2><?= number_format(array_sum(array_column($data, 'total_san_luong')), 0) ?></h2>
                         <p class="mb-0">Tổng sản lượng</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-box">
+                        <h2><?= number_format(count(array_filter($data, fn($row) => !empty($row['has_gkhl'])))) ?></h2>
+                        <p class="mb-0"><i class="fas fa-handshake me-2"></i>KH có GKHL</p>
                     </div>
                 </div>
             </div>
@@ -186,7 +256,18 @@
             <div class="data-card">
                 <div class="card-body">
                     <h5 class="card-title mb-4">
-                        <i class="fas fa-users me-2"></i>Danh sách khách hàng (Ngày = NULL)
+                        <i class="fas fa-users me-2"></i>Danh sách khách hàng
+                        <?php if (isset($_GET['gkhl_status'])): ?>
+                            <?php if ($_GET['gkhl_status'] === '1'): ?>
+                                <span class="badge badge-gkhl ms-2">
+                                    <i class="fas fa-check-circle"></i> Lọc: Đã tham gia GKHL
+                                </span>
+                            <?php elseif ($_GET['gkhl_status'] === '0'): ?>
+                                <span class="badge badge-no-gkhl ms-2">
+                                    <i class="fas fa-times-circle"></i> Lọc: Chưa tham gia GKHL
+                                </span>
+                            <?php endif; ?>
+                        <?php endif; ?>
                     </h5>
                     <div class="table-responsive">
                         <table id="customerTable" class="table table-hover table-sm">
@@ -199,6 +280,7 @@
                                     <th>Tỉnh/TP</th>
                                     <th>Doanh số</th>
                                     <th>Sản lượng</th>
+                                    <th><i class="fas fa-handshake me-1"></i>GKHL</th>
                                     <th>Thao tác</th>
                                 </tr>
                             </thead>
@@ -216,6 +298,17 @@
                                         <td><?= htmlspecialchars($row['ma_tinh_tp']) ?></td>
                                         <td><strong><?= number_format($row['total_doanh_so'], 0) ?></strong></td>
                                         <td><?= number_format($row['total_san_luong'], 0) ?></td>
+                                        <td>
+                                            <?php if (!empty($row['has_gkhl'])): ?>
+                                                <span class="badge badge-gkhl">
+                                                    <i class="fas fa-check-circle"></i> GKHL
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge badge-no-gkhl">
+                                                    <i class="fas fa-times-circle"></i> Chưa có
+                                                </span>
+                                            <?php endif; ?>
+                                        </td>
                                         <td>
                                             <a href="report.php?action=detail&ma_khach_hang=<?= urlencode($row['ma_khach_hang']) ?>&thang_nam=<?= urlencode($thangNam) ?>" 
                                                class="btn btn-detail btn-sm">
@@ -253,8 +346,8 @@
                 pageLength: 25,
                 order: [[5, 'desc']],
                 columnDefs: [
-                    { orderable: false, targets: 7 },
-                    { className: "text-center", targets: [0, 7] }
+                    { orderable: false, targets: 8 },
+                    { className: "text-center", targets: [0, 7, 8] }
                 ],
                 autoWidth: false,
                 scrollX: false

@@ -47,6 +47,54 @@
             margin-right: 5px;
             border-radius: 10px 10px 0 0;
         }
+        /* ✅ MỚI: Style cho GKHL */
+        .gkhl-info {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        .gkhl-info h6 {
+            color: #fff;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+        .gkhl-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        .gkhl-item:last-child {
+            border-bottom: none;
+        }
+        .gkhl-label {
+            font-weight: 500;
+        }
+        .gkhl-value {
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+        .gkhl-not-registered {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+        }
+        .location-info {
+            background: #e7f3ff;
+            padding: 12px;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -89,6 +137,14 @@
                                 <td><?= htmlspecialchars($data[0]['ma_so_thue']) ?></td>
                             </tr>
                         </table>
+                        
+                        <!-- ✅ MỚI: Hiển thị Location -->
+                        <?php if (!empty($location)): ?>
+                            <div class="location-info">
+                                <strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong><br>
+                                <?= htmlspecialchars($location) ?>
+                            </div>
+                        <?php endif; ?>
                     </div>
                     <div class="col-md-4">
                         <h5 class="text-primary mb-3"><i class="fas fa-building me-2"></i>Thông tin đơn vị</h5>
@@ -133,6 +189,50 @@
                         </table>
                     </div>
                 </div>
+
+                <!-- ✅ MỚI: Hiển thị thông tin GKHL -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <?php if (!empty($gkhlInfo)): ?>
+                            <div class="gkhl-info">
+                                <h6><i class="fas fa-handshake me-2"></i>Thông tin Gắn kết Hoa Linh</h6>
+                                <div class="gkhl-item">
+                                    <span class="gkhl-label">📌 Tên Quầy:</span>
+                                    <span class="gkhl-value"><?= htmlspecialchars($gkhlInfo['ten_quay']) ?></span>
+                                </div>
+                                <div class="gkhl-item">
+                                    <span class="gkhl-label">📋 Đăng ký Chương trình:</span>
+                                    <span class="gkhl-value"><?= !empty($gkhlInfo['dang_ky_chuong_trinh']) ? htmlspecialchars($gkhlInfo['dang_ky_chuong_trinh']) : 'Chưa có' ?></span>
+                                </div>
+                                <div class="gkhl-item">
+                                    <span class="gkhl-label">💰 Đăng ký Mục Doanh số:</span>
+                                    <span class="gkhl-value"><?= !empty($gkhlInfo['dang_ky_muc_doanh_so']) ? htmlspecialchars($gkhlInfo['dang_ky_muc_doanh_so']) : 'Chưa có' ?></span>
+                                </div>
+                                <div class="gkhl-item">
+                                    <span class="gkhl-label">🎨 Đăng ký Trưng bày:</span>
+                                    <span class="gkhl-value"><?= !empty($gkhlInfo['dang_ky_trung_bay']) ? htmlspecialchars($gkhlInfo['dang_ky_trung_bay']) : 'Chưa có' ?></span>
+                                </div>
+                                <div class="gkhl-item">
+                                    <span class="gkhl-label">📱 Khớp SĐT Định danh:</span>
+                                    <span class="gkhl-value">
+                                        <?php if ($gkhlInfo['khop_sdt_dinh_danh'] == 1): ?>
+                                            <span class="badge bg-success"><i class="fas fa-check"></i> Đã khớp</span>
+                                        <?php elseif ($gkhlInfo['khop_sdt_dinh_danh'] == 0): ?>
+                                            <span class="badge bg-danger"><i class="fas fa-times"></i> Chưa khớp</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-secondary">Chưa rõ</span>
+                                        <?php endif; ?>
+                                    </span>
+                                </div>
+                            </div>
+                        <?php else: ?>
+                            <div class="gkhl-not-registered">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>⚠️ Khách hàng chưa tham gia Gắn kết Hoa Linh</strong>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
             <div class="data-card">
@@ -159,13 +259,13 @@
 
                     <div class="tab-content">
                         <div id="all" class="tab-pane fade show active">
-                            <?php renderTable($data); ?>
+                            <?php renderTable($data, !empty($gkhlInfo)); ?>
                         </div>
                         <div id="null-date" class="tab-pane fade">
-                            <?php renderTable(array_filter($data, fn($d) => empty($d['ngay']))); ?>
+                            <?php renderTable(array_filter($data, fn($d) => empty($d['ngay'])), !empty($gkhlInfo)); ?>
                         </div>
                         <div id="not-null-date" class="tab-pane fade">
-                            <?php renderTable(array_filter($data, fn($d) => !empty($d['ngay']))); ?>
+                            <?php renderTable(array_filter($data, fn($d) => !empty($d['ngay'])), !empty($gkhlInfo)); ?>
                         </div>
                     </div>
                 </div>
@@ -178,7 +278,7 @@
     </div>
 
     <?php
-    function renderTable($data) {
+    function renderTable($data, $hasGkhl = false) {
         if (empty($data)) {
             echo '<div class="alert alert-info">Không có dữ liệu</div>';
             return;
@@ -199,6 +299,9 @@
                         <th class="text-end">DS sau CK</th>
                         <th>Loại SP</th>
                         <th>Ngành hàng</th>
+                        <?php if ($hasGkhl): ?>
+                            <th class="text-center">GKHL</th>
+                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -221,6 +324,11 @@
                             <td class="text-end"><strong><?= number_format($row['tong_doanh_so_sau_ck'], 0) ?></strong></td>
                             <td><span class="badge bg-secondary"><?= htmlspecialchars($row['loai_san_pham']) ?></span></td>
                             <td><span class="badge bg-primary"><?= htmlspecialchars($row['nganh_hang']) ?></span></td>
+                            <?php if ($hasGkhl): ?>
+                                <td class="text-center">
+                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> GKHL</span>
+                                </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>

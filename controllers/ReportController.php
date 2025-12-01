@@ -36,6 +36,9 @@ class ReportController {
         }
 
         $data = $this->model->getCustomerDetail($maKhachHang, $thangNam);
+
+        $location = $this->model->getCustomerLocation($maKhachHang);
+        $gkhlInfo = $this->model->getGkhlInfo($maKhachHang);
         require_once 'views/detail.php';
     }
 }
