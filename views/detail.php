@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         body {
             background: #f5f7fa;
@@ -47,13 +48,15 @@
             margin-right: 5px;
             border-radius: 10px 10px 0 0;
         }
-        /* ✅ MỚI: Style cho GKHL */
+        
+        /* GKHL Info Box - Same size as location */
         .gkhl-info {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 20px;
             border-radius: 10px;
-            margin-top: 15px;
+            height: 100%;
+            min-height: 200px;
         }
         .gkhl-info h6 {
             color: #fff;
@@ -74,26 +77,75 @@
         }
         .gkhl-label {
             font-weight: 500;
+            font-size: 0.9rem;
         }
         .gkhl-value {
             background: rgba(255,255,255,0.2);
             padding: 4px 12px;
             border-radius: 20px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .gkhl-not-registered {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
             padding: 20px;
             border-radius: 10px;
             text-align: center;
-            margin-top: 15px;
+            color: white;
+            height: 100%;
+            min-height: 200px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
+        
+        /* Location Info Box */
         .location-info {
             background: #e7f3ff;
-            padding: 12px;
+            padding: 20px;
             border-left: 4px solid #667eea;
-            border-radius: 5px;
-            margin-bottom: 10px;
+            border-radius: 10px;
+            height: 100%;
+            min-height: 200px;
+        }
+        .location-info h6 {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-bottom: 2px solid rgba(102, 126, 234, 0.3);
+            padding-bottom: 10px;
+        }
+        
+        /* Map Container */
+        #map {
+            height: 400px;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+        .map-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .status-badge-gkhl {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .status-badge-gkhl.has-gkhl {
+            background: rgba(40, 167, 69, 0.2);
+            color: #28a745;
+        }
+        .status-badge-gkhl.no-gkhl {
+            background: rgba(220, 53, 69, 0.2);
+            color: #dc3545;
         }
     </style>
 </head>
@@ -137,14 +189,6 @@
                                 <td><?= htmlspecialchars($data[0]['ma_so_thue']) ?></td>
                             </tr>
                         </table>
-                        
-                        <!-- ✅ MỚI: Hiển thị Location -->
-                        <?php if (!empty($location)): ?>
-                            <div class="location-info">
-                                <strong><i class="fas fa-map-marker-alt me-2"></i>Location:</strong><br>
-                                <?= htmlspecialchars($location) ?>
-                            </div>
-                        <?php endif; ?>
                     </div>
                     <div class="col-md-4">
                         <h5 class="text-primary mb-3"><i class="fas fa-building me-2"></i>Thông tin đơn vị</h5>
@@ -190,49 +234,101 @@
                     </div>
                 </div>
 
-                <!-- ✅ MỚI: Hiển thị thông tin GKHL -->
-                <div class="row mt-3">
-                    <div class="col-12">
+                <!-- Location & GKHL Row -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <?php if (!empty($location)): ?>
+                            <div class="location-info">
+                                <h6><i class="fas fa-map-marker-alt me-2"></i>Thông tin Vị trí</h6>
+                                <p class="mb-2"><strong>Location:</strong></p>
+                                <p class="text-muted"><?= htmlspecialchars($location) ?></p>
+                                <?php
+                                    // Parse location coordinates
+                                    $coords = explode(',', $location);
+                                    if (count($coords) === 2) {
+                                        $lat = trim($coords[0]);
+                                        $lng = trim($coords[1]);
+                                        echo "<p class=\"mb-0 mt-3\"><small><i class=\"fas fa-crosshairs me-1\"></i> Lat: <code>$lat</code>, Lng: <code>$lng</code></small></p>";
+                                    }
+                                ?>
+                            </div>
+                        <?php else: ?>
+                            <div class="location-info">
+                                <h6><i class="fas fa-map-marker-alt me-2"></i>Thông tin Vị trí</h6>
+                                <p class="text-muted text-center mt-5">
+                                    <i class="fas fa-map-marked-alt fa-3x mb-3 d-block"></i>
+                                    Chưa có thông tin vị trí
+                                </p>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <div class="col-md-6">
                         <?php if (!empty($gkhlInfo)): ?>
                             <div class="gkhl-info">
-                                <h6><i class="fas fa-handshake me-2"></i>Thông tin Gắn kết Hoa Linh</h6>
+                                <h6>
+                                    <i class="fas fa-handshake me-2"></i>Gắn kết Hoa Linh
+                                    <span class="status-badge-gkhl has-gkhl float-end">
+                                        <i class="fas fa-check-circle"></i> Đã tham gia
+                                    </span>
+                                </h6>
                                 <div class="gkhl-item">
                                     <span class="gkhl-label">📌 Tên Quầy:</span>
                                     <span class="gkhl-value"><?= htmlspecialchars($gkhlInfo['ten_quay']) ?></span>
                                 </div>
                                 <div class="gkhl-item">
-                                    <span class="gkhl-label">📋 Đăng ký Chương trình:</span>
+                                    <span class="gkhl-label">📋 ĐK Chương trình:</span>
                                     <span class="gkhl-value"><?= !empty($gkhlInfo['dang_ky_chuong_trinh']) ? htmlspecialchars($gkhlInfo['dang_ky_chuong_trinh']) : 'Chưa có' ?></span>
                                 </div>
                                 <div class="gkhl-item">
-                                    <span class="gkhl-label">💰 Đăng ký Mục Doanh số:</span>
+                                    <span class="gkhl-label">💰 ĐK Mục Doanh số:</span>
                                     <span class="gkhl-value"><?= !empty($gkhlInfo['dang_ky_muc_doanh_so']) ? htmlspecialchars($gkhlInfo['dang_ky_muc_doanh_so']) : 'Chưa có' ?></span>
                                 </div>
                                 <div class="gkhl-item">
-                                    <span class="gkhl-label">🎨 Đăng ký Trưng bày:</span>
+                                    <span class="gkhl-label">🎨 ĐK Trưng bày:</span>
                                     <span class="gkhl-value"><?= !empty($gkhlInfo['dang_ky_trung_bay']) ? htmlspecialchars($gkhlInfo['dang_ky_trung_bay']) : 'Chưa có' ?></span>
                                 </div>
                                 <div class="gkhl-item">
-                                    <span class="gkhl-label">📱 Khớp SĐT Định danh:</span>
+                                    <span class="gkhl-label">📱 Khớp SĐT:</span>
                                     <span class="gkhl-value">
                                         <?php if ($gkhlInfo['khop_sdt_dinh_danh'] == 1): ?>
-                                            <span class="badge bg-success"><i class="fas fa-check"></i> Đã khớp</span>
+                                            <i class="fas fa-check"></i> Đã khớp
                                         <?php elseif ($gkhlInfo['khop_sdt_dinh_danh'] == 0): ?>
-                                            <span class="badge bg-danger"><i class="fas fa-times"></i> Chưa khớp</span>
+                                            <i class="fas fa-times"></i> Chưa khớp
                                         <?php else: ?>
-                                            <span class="badge bg-secondary">Chưa rõ</span>
+                                            Chưa rõ
                                         <?php endif; ?>
                                     </span>
                                 </div>
                             </div>
                         <?php else: ?>
                             <div class="gkhl-not-registered">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>⚠️ Khách hàng chưa tham gia Gắn kết Hoa Linh</strong>
+                                <i class="fas fa-info-circle fa-3x mb-3"></i>
+                                <h5 class="mb-2">Chưa tham gia GKHL</h5>
+                                <p class="mb-0">Khách hàng chưa đăng ký chương trình Gắn kết Hoa Linh</p>
                             </div>
                         <?php endif; ?>
                     </div>
                 </div>
+
+                <!-- Map Display -->
+                <?php if (!empty($location)): ?>
+                    <?php
+                        $coords = explode(',', $location);
+                        if (count($coords) === 2) {
+                            $lat = trim($coords[0]);
+                            $lng = trim($coords[1]);
+                    ?>
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="map-container">
+                                <h6 class="mb-3"><i class="fas fa-map me-2"></i>Bản đồ vị trí khách hàng</h6>
+                                <div id="map"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <?php } ?>
+                <?php endif; ?>
             </div>
 
             <div class="data-card">
@@ -259,13 +355,13 @@
 
                     <div class="tab-content">
                         <div id="all" class="tab-pane fade show active">
-                            <?php renderTable($data, !empty($gkhlInfo)); ?>
+                            <?php renderTable($data); ?>
                         </div>
                         <div id="null-date" class="tab-pane fade">
-                            <?php renderTable(array_filter($data, fn($d) => empty($d['ngay'])), !empty($gkhlInfo)); ?>
+                            <?php renderTable(array_filter($data, fn($d) => empty($d['ngay']))); ?>
                         </div>
                         <div id="not-null-date" class="tab-pane fade">
-                            <?php renderTable(array_filter($data, fn($d) => !empty($d['ngay'])), !empty($gkhlInfo)); ?>
+                            <?php renderTable(array_filter($data, fn($d) => !empty($d['ngay']))); ?>
                         </div>
                     </div>
                 </div>
@@ -278,7 +374,7 @@
     </div>
 
     <?php
-    function renderTable($data, $hasGkhl = false) {
+    function renderTable($data) {
         if (empty($data)) {
             echo '<div class="alert alert-info">Không có dữ liệu</div>';
             return;
@@ -299,9 +395,6 @@
                         <th class="text-end">DS sau CK</th>
                         <th>Loại SP</th>
                         <th>Ngành hàng</th>
-                        <?php if ($hasGkhl): ?>
-                            <th class="text-center">GKHL</th>
-                        <?php endif; ?>
                     </tr>
                 </thead>
                 <tbody>
@@ -324,11 +417,6 @@
                             <td class="text-end"><strong><?= number_format($row['tong_doanh_so_sau_ck'], 0) ?></strong></td>
                             <td><span class="badge bg-secondary"><?= htmlspecialchars($row['loai_san_pham']) ?></span></td>
                             <td><span class="badge bg-primary"><?= htmlspecialchars($row['nganh_hang']) ?></span></td>
-                            <?php if ($hasGkhl): ?>
-                                <td class="text-center">
-                                    <span class="badge bg-success"><i class="fas fa-check-circle"></i> GKHL</span>
-                                </td>
-                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -340,6 +428,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         $(document).ready(function() {
             $('.detail-table').DataTable({
@@ -349,6 +438,36 @@
                 pageLength: 50,
                 order: [[1, 'desc']]
             });
+
+            <?php if (!empty($location)): ?>
+                <?php
+                    $coords = explode(',', $location);
+                    if (count($coords) === 2) {
+                        $lat = trim($coords[0]);
+                        $lng = trim($coords[1]);
+                ?>
+                // Initialize map
+                var map = L.map('map').setView([<?= $lat ?>, <?= $lng ?>], 16);
+                
+                // Add OpenStreetMap tiles
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
+                
+                // Add marker
+                var marker = L.marker([<?= $lat ?>, <?= $lng ?>]).addTo(map);
+                marker.bindPopup('<b><?= htmlspecialchars($data[0]['ten_khach_hang']) ?></b><br><?= htmlspecialchars($data[0]['dia_chi_khach_hang']) ?>').openPopup();
+                
+                // Add circle to highlight area
+                var circle = L.circle([<?= $lat ?>, <?= $lng ?>], {
+                    color: '#667eea',
+                    fillColor: '#667eea',
+                    fillOpacity: 0.2,
+                    radius: 100
+                }).addTo(map);
+                <?php } ?>
+            <?php endif; ?>
         });
     </script>
 </body>

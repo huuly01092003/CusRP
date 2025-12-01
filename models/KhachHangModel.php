@@ -154,68 +154,73 @@ class KhachHangModel {
         return null;
     }
 
-  public function getDataByMonthYear($thangNam, $filters = []) {
-    $sql = "SELECT DISTINCT 
-                kh.ma_khach_hang, 
-                kh.ten_khach_hang, 
-                kh.dia_chi_khach_hang, 
-                kh.ma_tinh_tp, 
-                kh.phan_loai_khach_hang, 
-                kh.kenh,
-                SUM(kh.tong_doanh_so_sau_ck) as total_doanh_so,
-                SUM(kh.tong_san_luong) as total_san_luong,
-                CASE WHEN g.ma_kh_dms IS NOT NULL THEN 1 ELSE 0 END as has_gkhl
-            FROM {$this->table} kh
-            LEFT JOIN gkhl g ON kh.ma_khach_hang = g.ma_kh_dms
-            WHERE kh.thang_nam = :thang_nam AND kh.ngay IS NULL";
-    
-    $params = [':thang_nam' => $thangNam];
-    
-    if (!empty($filters['ma_tinh_tp'])) {
-        $sql .= " AND kh.ma_tinh_tp = :ma_tinh_tp";
-        $params[':ma_tinh_tp'] = $filters['ma_tinh_tp'];
-    }
-    
-    if (!empty($filters['ma_khach_hang'])) {
-        $sql .= " AND kh.ma_khach_hang LIKE :ma_khach_hang";
-        $params[':ma_khach_hang'] = '%' . $filters['ma_khach_hang'] . '%';
-    }
-    
-    // ✅ MỚI: Lọc theo trạng thái GKHL
-    if (isset($filters['gkhl_status']) && $filters['gkhl_status'] !== '') {
-        if ($filters['gkhl_status'] === '1') {
-            // Chỉ lấy khách hàng đã tham gia GKHL
-            $sql .= " AND g.ma_kh_dms IS NOT NULL";
-        } elseif ($filters['gkhl_status'] === '0') {
-            // Chỉ lấy khách hàng chưa tham gia GKHL
-            $sql .= " AND g.ma_kh_dms IS NULL";
+    // ✅ FIXED: Sửa lại logic lọc GKHL
+    public function getDataByMonthYear($thangNam, $filters = []) {
+        // Xây dựng query cơ bản với subquery để xác định has_gkhl
+        $sql = "SELECT 
+                    kh.ma_khach_hang, 
+                    kh.ten_khach_hang, 
+                    kh.dia_chi_khach_hang, 
+                    kh.ma_tinh_tp, 
+                    kh.phan_loai_khach_hang, 
+                    kh.kenh,
+                    SUM(kh.tong_doanh_so_sau_ck) as total_doanh_so,
+                    SUM(kh.tong_san_luong) as total_san_luong,
+                    MAX(CASE WHEN g.ma_kh_dms IS NOT NULL THEN 1 ELSE 0 END) as has_gkhl
+                FROM {$this->table} kh
+                LEFT JOIN gkhl g ON kh.ma_khach_hang = g.ma_kh_dms
+                WHERE kh.thang_nam = :thang_nam 
+                AND kh.ngay IS NULL";
+        
+        $params = [':thang_nam' => $thangNam];
+        
+        if (!empty($filters['ma_tinh_tp'])) {
+            $sql .= " AND kh.ma_tinh_tp = :ma_tinh_tp";
+            $params[':ma_tinh_tp'] = $filters['ma_tinh_tp'];
         }
+        
+        if (!empty($filters['ma_khach_hang'])) {
+            $sql .= " AND kh.ma_khach_hang LIKE :ma_khach_hang";
+            $params[':ma_khach_hang'] = '%' . $filters['ma_khach_hang'] . '%';
+        }
+        
+        // GROUP BY trước
+        $sql .= " GROUP BY kh.ma_khach_hang, kh.ten_khach_hang, kh.dia_chi_khach_hang, 
+                  kh.ma_tinh_tp, kh.phan_loai_khach_hang, kh.kenh";
+        
+        // ✅ FIXED: Lọc GKHL sau khi GROUP BY bằng HAVING
+        if (isset($filters['gkhl_status']) && $filters['gkhl_status'] !== '') {
+            if ($filters['gkhl_status'] === '1') {
+                // Chỉ lấy khách hàng đã tham gia GKHL
+                $sql .= " HAVING has_gkhl = 1";
+            } elseif ($filters['gkhl_status'] === '0') {
+                // Chỉ lấy khách hàng chưa tham gia GKHL
+                $sql .= " HAVING has_gkhl = 0";
+            }
+        }
+        
+        $sql .= " ORDER BY total_doanh_so DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
-    $sql .= " GROUP BY kh.ma_khach_hang, kh.ten_khach_hang, kh.dia_chi_khach_hang, kh.ma_tinh_tp, kh.phan_loai_khach_hang, kh.kenh, g.ma_kh_dms
-              ORDER BY total_doanh_so DESC";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute($params);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
 
-public function getCustomerDetail($maKhachHang, $thangNam) {
-    $sql = "SELECT * FROM {$this->table} 
-            WHERE ma_khach_hang = :ma_khach_hang 
-            AND thang_nam = :thang_nam
-            AND NOT (tong_san_luong = 0 OR tong_doanh_so = 0)
-            AND tong_doanh_so > 0
-            ORDER BY ngay IS NULL, ngay DESC";
-    
-    $stmt = $this->conn->prepare($sql);
-    $stmt->execute([
-        ':ma_khach_hang' => $maKhachHang,
-        ':thang_nam' => $thangNam
-    ]);
-    return $stmt->fetchAll(PDO::FETCH_ASSOC);
-}
-
+    public function getCustomerDetail($maKhachHang, $thangNam) {
+        $sql = "SELECT * FROM {$this->table} 
+                WHERE ma_khach_hang = :ma_khach_hang 
+                AND thang_nam = :thang_nam
+                AND NOT (tong_san_luong = 0 OR tong_doanh_so = 0)
+                AND tong_doanh_so > 0
+                ORDER BY ngay IS NULL, ngay DESC";
+        
+        $stmt = $this->conn->prepare($sql);
+        $stmt->execute([
+            ':ma_khach_hang' => $maKhachHang,
+            ':thang_nam' => $thangNam
+        ]);
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 
     public function getProvinces() {
         $sql = "SELECT DISTINCT ma_tinh_tp FROM {$this->table} WHERE ma_tinh_tp IS NOT NULL AND ma_tinh_tp != '' ORDER BY ma_tinh_tp";
@@ -231,8 +236,7 @@ public function getCustomerDetail($maKhachHang, $thangNam) {
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-
-    // ✅ MỚI: Lấy thông tin Location từ bảng dskh
+    // Lấy thông tin Location từ bảng dskh
     public function getCustomerLocation($maKhachHang) {
         $sql = "SELECT location FROM dskh WHERE ma_kh = :ma_kh LIMIT 1";
         $stmt = $this->conn->prepare($sql);
@@ -241,7 +245,7 @@ public function getCustomerDetail($maKhachHang, $thangNam) {
         return $result['location'] ?? null;
     }
 
-    // ✅ MỚI: Lấy thông tin gắn kết hoa linh
+    // Lấy thông tin gắn kết hoa linh
     public function getGkhlInfo($maKhachHang) {
         $sql = "SELECT 
                     ma_kh_dms, 
