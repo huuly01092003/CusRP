@@ -63,6 +63,18 @@
             background: #dc3545;
             padding: 5px 10px;
         }
+        .badge-null {
+            background: #6c757d;
+            padding: 5px 10px;
+        }
+        .loading-container {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .loading-container.show {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -80,7 +92,7 @@
     <div class="container-fluid mt-4">
         <div class="filter-card">
             <h5 class="mb-4"><i class="fas fa-filter me-2"></i>Bộ lọc dữ liệu</h5>
-            <form method="GET" action="gkhl.php">
+            <form method="GET" action="gkhl.php" id="filterForm">
                 <input type="hidden" name="action" value="list">
                 <div class="row g-3">
                     <div class="col-md-3">
@@ -111,10 +123,10 @@
                         <select name="khop_sdt" class="form-select">
                             <option value="">-- Tất cả --</option>
                             <option value="1" <?= ($filters['khop_sdt'] === '1') ? 'selected' : '' ?>>
-                                <i class="fas fa-check"></i> Đã khớp
+                                <i class="fas fa-check"></i> Đã khớp (Y)
                             </option>
                             <option value="0" <?= ($filters['khop_sdt'] === '0') ? 'selected' : '' ?>>
-                                <i class="fas fa-times"></i> Chưa khớp
+                                <i class="fas fa-times"></i> Chưa khớp (N)
                             </option>
                         </select>
                     </div>
@@ -154,7 +166,15 @@
                     <i class="fas fa-list me-2"></i>Danh sách gắn kết 
                     <span class="badge bg-secondary"><?= count($data) ?> bản ghi</span>
                 </h5>
-                <div class="table-responsive">
+                
+                <div class="loading-container" id="loadingContainer">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">Đang tải...</span>
+                    </div>
+                    <p>Đang tải dữ liệu, vui lòng chờ...</p>
+                </div>
+
+                <div class="table-responsive" id="tableContainer" style="display: none;">
                     <table id="gkhlTable" class="table table-hover table-sm">
                         <thead>
                             <tr>
@@ -197,13 +217,19 @@
                                         <td><?= htmlspecialchars($row['sdt_zalo']) ?></td>
                                         <td><?= htmlspecialchars($row['sdt_dinh_danh']) ?></td>
                                         <td class="text-center">
-                                            <?php if ($row['khop_sdt_dinh_danh'] == 1): ?>
+                                            <?php 
+                                            $khopSdt = $row['khop_sdt_dinh_danh'];
+                                            if ($khopSdt == 1): ?>
                                                 <span class="badge badge-yes">
                                                     <i class="fas fa-check"></i> Đã khớp
                                                 </span>
-                                            <?php else: ?>
+                                            <?php elseif ($khopSdt == 0): ?>
                                                 <span class="badge badge-no">
                                                     <i class="fas fa-times"></i> Chưa khớp
+                                                </span>
+                                            <?php else: ?>
+                                                <span class="badge badge-null">
+                                                    <i class="fas fa-question"></i> Chưa rõ
                                                 </span>
                                             <?php endif; ?>
                                         </td>
@@ -239,6 +265,10 @@
     <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
     <script>
         $(document).ready(function() {
+            // Hiển thị container table sau khi DOM sẵn sàng
+            $('#tableContainer').show();
+            $('#loadingContainer').removeClass('show');
+            
             $('#gkhlTable').DataTable({
                 language: {
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
@@ -250,7 +280,9 @@
                 columnDefs: [
                     { orderable: false, targets: 7 },
                     { className: "text-center", targets: [0, 4, 7] }
-                ]
+                ],
+                deferRender: true,
+                processing: true
             });
         });
     </script>

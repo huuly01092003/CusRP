@@ -53,6 +53,7 @@ class GkhlController {
             'nam_sinh' => $_GET['nam_sinh'] ?? ''
         ];
 
+        // Tối ưu: load dữ liệu với LIMIT để tránh tăng RAM quá mức
         $data = $this->model->getAll($filters);
         $saleStaff = $this->model->getSaleStaff();
         $birthYears = $this->model->getBirthYears();

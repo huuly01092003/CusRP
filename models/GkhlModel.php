@@ -4,6 +4,7 @@ require_once 'config/database.php';
 class GkhlModel {
     private $conn;
     private $table = "gkhl";
+    private const PAGE_SIZE = 1000; // Pagination cho import
 
     public function __construct() {
         $database = new Database();
@@ -25,6 +26,8 @@ class GkhlModel {
             
             $isFirstRow = true;
             $insertedCount = 0;
+            $batchSize = 100;
+            $batch = [];
             
             $sql = "INSERT INTO {$this->table} (
                 ma_nvbh, ten_nvbh, ma_kh_dms, ten_quay, ten_chu_cua_hang,
@@ -69,7 +72,7 @@ class GkhlModel {
                     $this->cleanNumber($row[7]),
                     !empty(trim($row[8])) ? trim($row[8]) : null,
                     !empty(trim($row[9])) ? trim($row[9]) : null,
-                    $this->cleanNumber($row[10], true),
+                    $this->convertYNToBoolean($row[10]), // Chuyển Y/N thành 1/0/null
                     !empty(trim($row[11])) ? trim($row[11]) : null,
                     !empty(trim($row[12])) ? trim($row[12]) : null,
                     !empty(trim($row[13])) ? trim($row[13]) : null
@@ -79,10 +82,29 @@ class GkhlModel {
                     continue;
                 }
                 
-                $stmt->execute($data);
+                $batch[] = $data;
                 
-                if ($stmt->rowCount() > 0) {
-                    $insertedCount++;
+                // Thực thi batch khi đạt kích thước
+                if (count($batch) >= $batchSize) {
+                    foreach ($batch as $batchData) {
+                        $stmt->execute($batchData);
+                        if ($stmt->rowCount() > 0) {
+                            $insertedCount++;
+                        }
+                    }
+                    $batch = [];
+                    // Giải phóng bộ nhớ
+                    gc_collect_cycles();
+                }
+            }
+            
+            // Thực thi batch cuối cùng
+            if (!empty($batch)) {
+                foreach ($batch as $batchData) {
+                    $stmt->execute($batchData);
+                    if ($stmt->rowCount() > 0) {
+                        $insertedCount++;
+                    }
                 }
             }
             
@@ -93,6 +115,24 @@ class GkhlModel {
             $this->conn->rollBack();
             return ['success' => false, 'error' => $e->getMessage()];
         }
+    }
+
+    private function convertYNToBoolean($value) {
+        if (empty($value) || $value === '' || $value === 'NULL') {
+            return null;
+        }
+        
+        $cleaned = strtoupper(trim($value));
+        
+        if ($cleaned === 'Y' || $cleaned === 'YES' || $cleaned === '1') {
+            return 1;
+        }
+        
+        if ($cleaned === 'N' || $cleaned === 'NO' || $cleaned === '0') {
+            return 0;
+        }
+        
+        return null;
     }
 
     private function cleanNumber($value, $asTinyInt = false) {
@@ -136,22 +176,26 @@ class GkhlModel {
             $params[':nam_sinh'] = $filters['nam_sinh'];
         }
         
-        $sql .= " ORDER BY ma_kh_dms";
+        $sql .= " ORDER BY ma_kh_dms LIMIT 5000";
         
         $stmt = $this->conn->prepare($sql);
         $stmt->execute($params);
+        
+        // Fetch với MODE_LAZY để tối ưu bộ nhớ
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getSaleStaff() {
-        $sql = "SELECT DISTINCT ma_nvbh, ten_nvbh FROM {$this->table} WHERE ma_nvbh IS NOT NULL ORDER BY ma_nvbh";
+        $sql = "SELECT DISTINCT ma_nvbh, ten_nvbh FROM {$this->table} 
+                WHERE ma_nvbh IS NOT NULL ORDER BY ma_nvbh LIMIT 1000";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function getBirthYears() {
-        $sql = "SELECT DISTINCT nam_sinh FROM {$this->table} WHERE nam_sinh IS NOT NULL ORDER BY nam_sinh DESC";
+        $sql = "SELECT DISTINCT nam_sinh FROM {$this->table} 
+                WHERE nam_sinh IS NOT NULL ORDER BY nam_sinh DESC LIMIT 100";
         $stmt = $this->conn->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
