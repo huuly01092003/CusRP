@@ -14,7 +14,19 @@ class KhachHangModel {
         try {
             $this->conn->beginTransaction();
             
-            $file = fopen($filePath, 'r');
+            // Đọc file với encoding UTF-8
+            $fileContent = file_get_contents($filePath);
+            
+            // Chuyển encoding nếu cần
+            if (!mb_check_encoding($fileContent, 'UTF-8')) {
+                $fileContent = mb_convert_encoding($fileContent, 'UTF-8', 'auto');
+            }
+            
+            // Parse CSV
+            $rows = array_map(function($line) {
+                return str_getcsv($line, ',', '"');
+            }, explode("\n", $fileContent));
+            
             $isFirstRow = true;
             $insertedCount = 0;
             
@@ -36,7 +48,12 @@ class KhachHangModel {
             
             $stmt = $this->conn->prepare($sql);
             
-            while (($row = fgetcsv($file, 0, ',')) !== FALSE) {
+            foreach ($rows as $row) {
+                // Bỏ qua dòng trống
+                if (empty($row) || count($row) < 48) {
+                    continue;
+                }
+                
                 if ($isFirstRow) {
                     $isFirstRow = false;
                     continue;
@@ -45,11 +62,32 @@ class KhachHangModel {
                 // Bỏ cột A (index 0), lấy từ cột B (index 1) đến AV (index 47)
                 $data = array_slice($row, 1, 47);
                 
-                // Xử lý ngày tháng
-                if (!empty($data[8])) {
-                    $data[8] = $this->convertExcelDate($data[8]);
+                // Xử lý từng cột
+                // Cột 0-7: Text fields (ma_don_vi -> so_dien_thoai)
+                for ($i = 0; $i < 8; $i++) {
+                    $data[$i] = !empty(trim($data[$i])) ? trim($data[$i]) : null;
+                }
+                
+                // Cột 8: ngay (index 8 trong $data)
+                if (!empty(trim($data[8]))) {
+                    $data[8] = $this->convertDate($data[8]);
                 } else {
                     $data[8] = null;
+                }
+                
+                // Cột 9-11: Text fields (ma_san_pham, ten_san_pham, don_vi_co_ban)
+                for ($i = 9; $i <= 11; $i++) {
+                    $data[$i] = !empty(trim($data[$i])) ? trim($data[$i]) : null;
+                }
+                
+                // Cột 12-27: Numeric fields (các trường số)
+                for ($i = 12; $i <= 27; $i++) {
+                    $data[$i] = $this->cleanNumber($data[$i]);
+                }
+                
+                // Cột 28-46: Text fields (loai_san_pham -> ma_tinh_tp)
+                for ($i = 28; $i <= 46; $i++) {
+                    $data[$i] = !empty(trim($data[$i])) ? trim($data[$i]) : null;
                 }
                 
                 // Thêm thang_nam vào cuối
@@ -59,7 +97,6 @@ class KhachHangModel {
                 $insertedCount++;
             }
             
-            fclose($file);
             $this->conn->commit();
             
             return ['success' => true, 'count' => $insertedCount];
@@ -69,19 +106,59 @@ class KhachHangModel {
         }
     }
 
-    private function convertExcelDate($dateValue) {
+    private function cleanNumber($value) {
+        if (empty($value) || $value === '' || $value === 'NULL') {
+            return null;
+        }
+        
+        // Loại bỏ dấu phẩy, khoảng trắng
+        $cleaned = str_replace([',', ' ', '.'], '', trim($value));
+        
+        // Kiểm tra nếu là số
+        if (is_numeric($cleaned)) {
+            return $cleaned;
+        }
+        
+        return null;
+    }
+
+    private function convertDate($dateValue) {
+        if (empty($dateValue) || $dateValue === 'NULL') {
+            return null;
+        }
+        
+        $dateValue = trim($dateValue);
+        
+        // Nếu là số (Excel serial date)
         if (is_numeric($dateValue)) {
             $unixDate = ($dateValue - 25569) * 86400;
             return date('Y-m-d', $unixDate);
         }
-        return date('Y-m-d', strtotime($dateValue));
+        
+        // Nếu là định dạng dd/mm/yyyy
+        if (preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/', $dateValue, $matches)) {
+            return $matches[3] . '-' . $matches[2] . '-' . $matches[1];
+        }
+        
+        // Nếu là định dạng yyyy-mm-dd
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dateValue)) {
+            return $dateValue;
+        }
+        
+        // Thử parse với strtotime
+        $timestamp = strtotime($dateValue);
+        if ($timestamp !== false) {
+            return date('Y-m-d', $timestamp);
+        }
+        
+        return null;
     }
 
     public function getDataByMonthYear($thangNam, $filters = []) {
         $sql = "SELECT DISTINCT 
                     ma_khach_hang, ten_khach_hang, dia_chi_khach_hang, 
                     ma_tinh_tp, phan_loai_khach_hang, kenh,
-                    SUM(tong_doanh_so) as total_doanh_so,
+                    SUM(tong_doanh_so_sau_ck) as total_doanh_so,
                     SUM(tong_san_luong) as total_san_luong
                 FROM {$this->table} 
                 WHERE thang_nam = :thang_nam AND ngay IS NULL";

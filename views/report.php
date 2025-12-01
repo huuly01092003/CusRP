@@ -38,17 +38,73 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
+        .table th {
+            white-space: nowrap;
+            font-size: 0.875rem;
+            padding: 12px 8px;
+            font-weight: 600;
+        }
+        .table td {
+            vertical-align: middle;
+            padding: 10px 8px;
+            font-size: 0.875rem;
+        }
+        /* Độ rộng cụ thể cho từng cột */
+        #customerTable th:nth-child(1),
+        #customerTable td:nth-child(1) {
+            width: 50px;
+            text-align: center;
+        }
+        #customerTable th:nth-child(2),
+        #customerTable td:nth-child(2) {
+            width: 140px;
+        }
+        #customerTable th:nth-child(3),
+        #customerTable td:nth-child(3) {
+            width: 280px;
+            max-width: 280px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #customerTable th:nth-child(4),
+        #customerTable td:nth-child(4) {
+            width: 350px;
+            max-width: 350px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #customerTable th:nth-child(5),
+        #customerTable td:nth-child(5) {
+            width: 140px;
+        }
+        #customerTable th:nth-child(6),
+        #customerTable td:nth-child(6) {
+            width: 140px;
+            text-align: right;
+        }
+        #customerTable th:nth-child(7),
+        #customerTable td:nth-child(7) {
+            width: 110px;
+            text-align: right;
+        }
+        #customerTable th:nth-child(8),
+        #customerTable td:nth-child(8) {
+            width: 100px;
+            text-align: center;
+        }
         .btn-detail {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             color: white;
-            padding: 5px 15px;
+            padding: 5px 12px;
             border-radius: 20px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
         }
         .btn-detail:hover {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
         }
     </style>
 </head>
@@ -133,7 +189,7 @@
                         <i class="fas fa-users me-2"></i>Danh sách khách hàng (Ngày = NULL)
                     </h5>
                     <div class="table-responsive">
-                        <table id="customerTable" class="table table-hover">
+                        <table id="customerTable" class="table table-hover table-sm">
                             <thead>
                                 <tr>
                                     <th>STT</th>
@@ -141,11 +197,9 @@
                                     <th>Tên khách hàng</th>
                                     <th>Địa chỉ</th>
                                     <th>Tỉnh/TP</th>
-                                    <th>Phân loại</th>
-                                    <th>Kênh</th>
-                                    <th class="text-end">Doanh số</th>
-                                    <th class="text-end">Sản lượng</th>
-                                    <th class="text-center">Thao tác</th>
+                                    <th>Doanh số</th>
+                                    <th>Sản lượng</th>
+                                    <th>Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -153,14 +207,16 @@
                                     <tr>
                                         <td><?= $index + 1 ?></td>
                                         <td><strong><?= htmlspecialchars($row['ma_khach_hang']) ?></strong></td>
-                                        <td><?= htmlspecialchars($row['ten_khach_hang']) ?></td>
-                                        <td><?= htmlspecialchars($row['dia_chi_khach_hang']) ?></td>
+                                        <td title="<?= htmlspecialchars($row['ten_khach_hang']) ?>">
+                                            <?= htmlspecialchars($row['ten_khach_hang']) ?>
+                                        </td>
+                                        <td title="<?= htmlspecialchars($row['dia_chi_khach_hang']) ?>">
+                                            <?= htmlspecialchars($row['dia_chi_khach_hang']) ?>
+                                        </td>
                                         <td><?= htmlspecialchars($row['ma_tinh_tp']) ?></td>
-                                        <td><span class="badge bg-info"><?= htmlspecialchars($row['phan_loai_khach_hang']) ?></span></td>
-                                        <td><span class="badge bg-success"><?= htmlspecialchars($row['kenh']) ?></span></td>
-                                        <td class="text-end"><?= number_format($row['total_doanh_so'], 0) ?></td>
-                                        <td class="text-end"><?= number_format($row['total_san_luong'], 2) ?></td>
-                                        <td class="text-center">
+                                        <td><strong><?= number_format($row['total_doanh_so'], 0) ?></strong></td>
+                                        <td><?= number_format($row['total_san_luong'], 0) ?></td>
+                                        <td>
                                             <a href="report.php?action=detail&ma_khach_hang=<?= urlencode($row['ma_khach_hang']) ?>&thang_nam=<?= urlencode($thangNam) ?>" 
                                                class="btn btn-detail btn-sm">
                                                 <i class="fas fa-eye me-1"></i>Chi tiết
@@ -195,7 +251,13 @@
                     url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
                 },
                 pageLength: 25,
-                order: [[7, 'desc']]
+                order: [[5, 'desc']],
+                columnDefs: [
+                    { orderable: false, targets: 7 },
+                    { className: "text-center", targets: [0, 7] }
+                ],
+                autoWidth: false,
+                scrollX: false
             });
         });
     </script>

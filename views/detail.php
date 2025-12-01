@@ -65,9 +65,9 @@
         <?php if (!empty($data)): ?>
             <div class="info-card">
                 <div class="row">
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <h5 class="text-primary mb-3"><i class="fas fa-info-circle me-2"></i>Thông tin khách hàng</h5>
-                        <table class="table table-borderless">
+                        <table class="table table-borderless table-sm">
                             <tr>
                                 <th width="150">Mã KH:</th>
                                 <td><strong><?= htmlspecialchars($data[0]['ma_khach_hang']) ?></strong></td>
@@ -84,11 +84,36 @@
                                 <th>Điện thoại:</th>
                                 <td><?= htmlspecialchars($data[0]['so_dien_thoai']) ?></td>
                             </tr>
+                            <tr>
+                                <th>Mã số thuế:</th>
+                                <td><?= htmlspecialchars($data[0]['ma_so_thue']) ?></td>
+                            </tr>
                         </table>
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <h5 class="text-primary mb-3"><i class="fas fa-building me-2"></i>Thông tin đơn vị</h5>
+                        <table class="table table-borderless table-sm">
+                            <tr>
+                                <th width="150">Mã đơn vị:</th>
+                                <td><?= htmlspecialchars($data[0]['ma_don_vi']) ?></td>
+                            </tr>
+                            <tr>
+                                <th>Tên đơn vị:</th>
+                                <td><?= htmlspecialchars($data[0]['ten_don_vi']) ?></td>
+                            </tr>
+                            <tr>
+                                <th>Mã NV:</th>
+                                <td><?= htmlspecialchars($data[0]['ma_nhan_vien']) ?></td>
+                            </tr>
+                            <tr>
+                                <th>Tên NV:</th>
+                                <td><?= htmlspecialchars($data[0]['ten_nhan_vien']) ?></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-4">
                         <h5 class="text-primary mb-3"><i class="fas fa-tags me-2"></i>Phân loại</h5>
-                        <table class="table table-borderless">
+                        <table class="table table-borderless table-sm">
                             <tr>
                                 <th width="150">Phân loại:</th>
                                 <td><span class="badge bg-info"><?= htmlspecialchars($data[0]['phan_loai_khach_hang']) ?></span></td>
@@ -190,7 +215,7 @@
                             <td><?= htmlspecialchars($row['ma_san_pham']) ?></td>
                             <td><?= htmlspecialchars($row['ten_san_pham']) ?></td>
                             <td><?= htmlspecialchars($row['don_vi_co_ban']) ?></td>
-                            <td class="text-end"><?= number_format($row['tong_san_luong'], 2) ?></td>
+                            <td class="text-end"><?= number_format($row['tong_san_luong'], 0) ?></td>
                             <td class="text-end"><?= number_format($row['tong_doanh_so'], 0) ?></td>
                             <td class="text-end"><?= number_format($row['tong_chiet_khau'], 0) ?></td>
                             <td class="text-end"><strong><?= number_format($row['tong_doanh_so_sau_ck'], 0) ?></strong></td>
