@@ -8,24 +8,33 @@ class ReportController {
         $this->model = new KhachHangModel();
     }
 
-    public function index() {
-        $thangNam = $_GET['thang_nam'] ?? '';
-        $filters = [
-            'ma_tinh_tp' => $_GET['ma_tinh_tp'] ?? '',
-            'ma_khach_hang' => $_GET['ma_khach_hang'] ?? '',
-            'gkhl_status' => $_GET['gkhl_status'] ?? ''  // ✅ THÊM gkhl_status
-        ];
+public function index() {
+    $thangNam = $_GET['thang_nam'] ?? '';
+    $filters = [
+        'ma_tinh_tp' => $_GET['ma_tinh_tp'] ?? '',
+        'ma_khach_hang' => $_GET['ma_khach_hang'] ?? '',
+        'gkhl_status' => $_GET['gkhl_status'] ?? ''  // ✅ THÊM gkhl_status
+    ];
 
-        $data = [];
-        $provinces = $this->model->getProvinces();
-        $monthYears = $this->model->getMonthYears();
+    $data = [];
+    $summary = [
+        'total_khach_hang' => 0,
+        'total_doanh_so' => 0,
+        'total_san_luong' => 0,
+        'total_gkhl' => 0
+    ];
 
-        if (!empty($thangNam)) {
-            $data = $this->model->getDataByMonthYear($thangNam, $filters);
-        }
+    $provinces = $this->model->getProvinces();
+    $monthYears = $this->model->getMonthYears();
 
-        require_once 'views/report.php';
+    if (!empty($thangNam)) {
+        $data = $this->model->getDataByMonthYear($thangNam, $filters); // chỉ 100 dòng cho table
+        $summary = $this->model->getSummaryStats($thangNam, $filters); // toàn bộ dữ liệu cho dashboard
     }
+
+    require_once 'views/report.php';
+}
+
 
     public function detail() {
         $maKhachHang = $_GET['ma_khach_hang'] ?? '';

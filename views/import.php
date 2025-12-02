@@ -1,3 +1,10 @@
+
+<?php
+$currentPage = 'import'; // Page hiện tại
+require_once __DIR__ . '/components/navbar.php';
+renderNavbar($currentPage);
+?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>

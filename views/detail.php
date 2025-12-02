@@ -51,7 +51,7 @@
         
         /* GKHL Info Box - Same size as location */
         .gkhl-info {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #04ff00ff 0%, #016310ff 100%);
             color: white;
             padding: 20px;
             border-radius: 10px;
@@ -140,8 +140,8 @@
             font-size: 0.9rem;
         }
         .status-badge-gkhl.has-gkhl {
-            background: rgba(40, 167, 69, 0.2);
-            color: #28a745;
+            background: rgba(5, 16, 7, 0.2);
+            color: #f9f9f9ff;
         }
         .status-badge-gkhl.no-gkhl {
             background: rgba(220, 53, 69, 0.2);

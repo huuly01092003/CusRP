@@ -1,3 +1,13 @@
+
+<?php
+// report.php
+$thangNam = $_GET['thang_nam'] ?? ''; // Lấy tháng/năm từ query string
+$currentPage = 'report'; // Đánh dấu page hiện tại
+
+require_once __DIR__ . '/components/navbar.php';
+renderNavbar($currentPage, $thangNam);
+?>
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -159,7 +169,6 @@
     <nav class="navbar navbar-custom navbar-dark">
         <div class="container-fluid">
             <span class="navbar-brand mb-0 h1">
-                <i class="fas fa-chart-line me-2"></i>Hệ thống Báo cáo Khách hàng
             </span>
             <a href="index.php" class="btn btn-light">
                 <i class="fas fa-upload me-2"></i>Import Dữ liệu
@@ -228,31 +237,32 @@
 
     <?php if (!empty($data)): ?>
         <div class="row mb-4">
-            <div class="col-md-3">
-                <div class="stat-box">
-                    <h2><?= number_format(count($data)) ?></h2>
-                    <p class="mb-0">Tổng số khách hàng</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-box">
-                    <h2><?= number_format(array_sum(array_column($data, 'total_doanh_so')), 0) ?></h2>
-                    <p class="mb-0">Tổng doanh số</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-box">
-                    <h2><?= number_format(array_sum(array_column($data, 'total_san_luong')), 0) ?></h2>
-                    <p class="mb-0">Tổng sản lượng</p>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="stat-box">
-                    <h2><?= number_format(count(array_filter($data, fn($row) => !empty($row['has_gkhl'])))) ?></h2>
-                    <p class="mb-0"><i class="fas fa-handshake me-2"></i>KH có GKHL</p>
-                </div>
-            </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <h2><?= number_format($summary['total_khach_hang']) ?></h2>
+            <p class="mb-0">Tổng số khách hàng</p>
         </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <h2><?= number_format($summary['total_doanh_so'], 0) ?></h2>
+            <p class="mb-0">Tổng doanh số</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <h2><?= number_format($summary['total_san_luong'], 0) ?></h2>
+            <p class="mb-0">Tổng sản lượng</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-box">
+            <h2><?= number_format($summary['total_gkhl'], 0) ?></h2>
+            <p class="mb-0"><i class="fas fa-handshake me-2"></i>KH có GKHL</p>
+        </div>
+    </div>
+</div>
+
 
         <div class="data-card">
             <div class="card-body">
@@ -355,29 +365,8 @@
             });
         });
 
-    //THÊM: Tối ưu DataTables - Chỉ khởi tạo nếu có dữ liệu
-        $(document).ready(function() {
-        // Chỉ khởi tạo DataTable nếu bảng có dữ liệu
-        if ($('#customerTable tbody tr').length > 0) {
-            $('#customerTable').DataTable({
-                language: {
-                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/vi.json'
-                },
-                pageLength: 25,
-                order: [[5, 'desc']],
-                columnDefs: [
-                    { orderable: false, targets: 8 },
-                    { className: "text-center", targets: [0, 7, 8] }
-                ],
-                autoWidth: false,
-                scrollX: false,
-                deferRender: true,      // ✅ Lazy render
-                processing: true,        // ✅ Hiển thị loading
-                bFilter: true,          // ✅ Giữ search
-                bLengthChange: true     // ✅ Giữ page size
-            });
-        }
-    });
+
+
     </script>
 </body>
 </html>
